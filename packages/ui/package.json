@@ -5,7 +5,10 @@
   "exports": {
     "./button": "./src/button.tsx",
     "./card": "./src/card.tsx",
-    "./code": "./src/code.tsx"
+    "./code": "./src/code.tsx",
+    "./*": "./src/components/*",
+    "./lib": "./lib/utils.ts",
+     "./ui": "./src/components/ui/index.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
@@ -19,10 +22,19 @@
     "@types/node": "^20.11.24",
     "@types/react": "18.3.0",
     "@types/react-dom": "18.3.1",
+    "tailwindcss": "^3.4.17",
     "typescript": "5.5.4"
   },
   "dependencies": {
+    "@radix-ui/react-label": "^2.1.1",
+    "@tabler/icons-react": "^3.28.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^11.18.1",
+    "lucide-react": "^0.473.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^2.6.0",
+    "tailwindcss-animate": "^1.0.7"
   }
 }

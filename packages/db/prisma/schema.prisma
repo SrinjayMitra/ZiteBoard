@@ -1,0 +1,54 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String  @id @default(uuid())
+  email    String  @unique
+  password String
+  name     String
+  photo    String?
+  rooms    RoomUser[] // Many-to-many relationship
+  chats    Chat[]
+  adminOf  Room[]     @relation("AdminRooms") // User is the admin of multiple rooms
+}
+
+model Room {
+  id        Int      @id @default(autoincrement())
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  adminId   String?
+  admin     User?    @relation("AdminRooms", fields: [adminId], references: [id])
+  users     RoomUser[]
+  chats     Chat[]
+}
+
+model RoomUser {
+  userId String
+  roomId Int
+  user   User  @relation(fields: [userId], references: [id])
+  room   Room  @relation(fields: [roomId], references: [id])
+  @@id([userId, roomId]) // Composite primary key
+}
+
+model Chat {
+  id        Int      @id @default(autoincrement())
+  roomId    Int
+  room      Room     @relation(fields: [roomId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  message   String
+  createdAt DateTime @default(now())
+}
+
