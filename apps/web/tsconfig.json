@@ -6,7 +6,9 @@
         "name": "next"
       }
     ],
-    "jsx": "preserve"
+    "jsx": "preserve",
+    "strict": false
+
   },
   "include": [
     "**/*.ts",

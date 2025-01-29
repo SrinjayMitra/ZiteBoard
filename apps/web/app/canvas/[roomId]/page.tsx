@@ -1,25 +1,69 @@
-import React from "react";
-import  Mycanvas  from "./canvas";
-import RoomCanvas from "./RoomCanvas";
-// import MycanvasCPY from "./socketCanvas";
+// "use client";
+// import MyPage from "./mypage";
+// interface PageProps {
+//   params: {
+//     roomId: string;
+//   };
+// }
+// export default function Page({ params }: PageProps) {
+//   if (!params?.roomId) {
+//     return <div>Error: Room ID is missing.</div>;
+//   }
+//   return <MyPage params={params} />;
+// }
 
-// Correcting the component definition with type for params
-interface DashboardProps {
-  params: {
-    roomId: string;
-  };
-}
 
-const Dashboard: React.FC<DashboardProps> =  async ({ params }) => {
-  const {roomId} = (await params);
-  console.log(roomId);
+// import React from "react";
+// import RoomCanvas from "./RoomCanvas";
+
+
+// interface DashboardProps {
+//   params: {
+//     roomId: string;
+//   };
+// }
+
+// const MyPage: React.FC<DashboardProps> = async ({ params }) => {
+//     const { roomId } = (await params); 
+//     console.log(params);
+//     // console.log(roomId);
+//     const roomName = String(roomId);
+//     return (
+//       <div>
+//         <RoomCanvas roomId={roomName} />
+//       </div>
+//     );
+
+// };
+
+// export default MyPage;
+
+'use client'
+
+import React from 'react'
+import RoomCanvas from './RoomCanvas'
+import { useParams } from 'next/navigation'
+
+interface DashboardProps {}
+
+const MyPage: React.FC<DashboardProps> = () => {
+  // Get the roomId from the URL using useParams hook
+  const { roomId } = useParams<{ roomId: string }>()
+
+  console.log(roomId)
+
+  // Ensure roomId is valid before rendering
+  if (!roomId) {
+    return <div>Room not found</div>
+  }
+
   return (
     <div>
-      {/* <Mycanvas type="rect" text="hello" roomId={roomId}/> */}
-      {/* <Mycanvas type="rect" text="hello" roomId={roomId}/> */}
-      <RoomCanvas  roomId={roomId}/>
+      <RoomCanvas roomId={roomId} />
     </div>
-  );
+  )
 }
 
-export default Dashboard;
+export default MyPage
+
+

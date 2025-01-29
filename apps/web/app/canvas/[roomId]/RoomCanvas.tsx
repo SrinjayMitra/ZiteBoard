@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import Mycanvas from "./canvas";
-import { ArrowRightIcon, CircleIcon, Diamond, Link, LogOutIcon, Minus, MousePointer, Pencil, RectangleHorizontalIcon, Square } from "lucide-react";
+import { ArrowRightIcon, CircleIcon, Diamond, LogOutIcon, Minus, MousePointer, Pencil, RectangleHorizontalIcon} from "lucide-react";
 import { IconSquareRounded } from "@tabler/icons-react";
 const { WS_URL } = require("@repo/backend-common/config");
 
