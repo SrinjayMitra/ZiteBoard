@@ -4,6 +4,7 @@ import axios from "axios";
 import { Socket } from "dgram";
 import React, { Component, useEffect, useState, useRef } from "react";
 const { WS_URL, HTTP_URL } = require("@repo/backend-common/config");
+import PageNotFound from "./notfound";
 
 interface MycanvasProps {
   type: string;
@@ -33,7 +34,7 @@ type Shape = {
   radiusY?: number;
   endX?: number;
   endY?: number;
-
+  points?: { x: number; y: number }[];
   /// add more shapes here for more
 };
 
@@ -75,6 +76,7 @@ const Mycanvas: React.FC<MycanvasProps> = ({
   const [isDrawing, setIsDrawing] = useState(false);
   const [startX, setStartX] = useState(0);
   const [startY, setStartY] = useState(0);
+  const [pageFound,setPageFound]  = useState(true);
   // const [socket,setSocket] = useState<WebSocket | null> (null);
   const [canvasCleared, setCanvasCleared] = useState(false);
   // const existingShapes = useRef<Shape[]>([]);
@@ -97,19 +99,22 @@ const Mycanvas: React.FC<MycanvasProps> = ({
     Width: number;
     Height: number;
   } | null>(null);
+  const currentPencilPath = useRef<{ x: number; y: number }[]>([]);
 
   const fetchRoomData = async (roomId: string) => {
     try {
       const res = await axios.get(`${HTTP_URL}/rooms/${roomId}`, {
         headers: {
-          Authorization: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE3MDg1MjcxLTYwZDctNDgwYS05Y2YyLTExMmRkNGFmODJjMCIsImlhdCI6MTczNzIzODU4N30.gnU2_iRbxpzcXWCdoS87qR0m6K-t7wzGd2ecFEK9GmY`, // Use environment variables for tokens
+          // Authorization: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE3MDg1MjcxLTYwZDctNDgwYS05Y2YyLTExMmRkNGFmODJjMCIsImlhdCI6MTczNzIzODU4N30.gnU2_iRbxpzcXWCdoS87qR0m6K-t7wzGd2ecFEK9GmY`,
+          Authorization:`${localStorage.getItem('token')}`
         },
       });
       const roomCode = res.data.id; // Handle the response data
       try {
         const response = await axios.get(`${HTTP_URL}/chats/${roomCode}`, {
           headers: {
-            Authorization: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE3MDg1MjcxLTYwZDctNDgwYS05Y2YyLTExMmRkNGFmODJjMCIsImlhdCI6MTczNzIzODU4N30.gnU2_iRbxpzcXWCdoS87qR0m6K-t7wzGd2ecFEK9GmY`, // Use environment variables for tokens
+            // Authorization: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE3MDg1MjcxLTYwZDctNDgwYS05Y2YyLTExMmRkNGFmODJjMCIsImlhdCI6MTczNzIzODU4N30.gnU2_iRbxpzcXWCdoS87qR0m6K-t7wzGd2ecFEK9GmY`, // Use environment variables for tokens
+            Authorization:`${localStorage.getItem('token')}`
           },
         });
         const chats = response.data.chats;
@@ -129,6 +134,7 @@ const Mycanvas: React.FC<MycanvasProps> = ({
             endX,
             endY,
           } = element.message;
+          const points = element.message.points || [];
           switch (element.message.type) {
             case "rect":
               // console.log(startX, startY, width, height);
@@ -178,6 +184,15 @@ const Mycanvas: React.FC<MycanvasProps> = ({
                 height,
               };
               break;
+            case "pencil":
+              shape = {
+                type: "pencil",
+                points
+              };
+            break;
+            case "pan":
+              console.log("pan");
+              break; 
           }
           console.log("existing shapes");
           if (shape) {
@@ -195,9 +210,11 @@ const Mycanvas: React.FC<MycanvasProps> = ({
           }
         });
       } catch (error) {
+        setPageFound(false);
         console.error("Error fetching room data:", error); // Log errors
       }
     } catch (error) {
+      setPageFound(false);
       console.error("Error fetching room data:", error); // Log errors
     }
   };
@@ -235,6 +252,9 @@ const Mycanvas: React.FC<MycanvasProps> = ({
       setIsDrawing(true);
       setStartX(e.offsetX);
       setStartY(e.offsetY);
+      if (type == "pencil") {
+        currentPencilPath.current = [{ x: e.offsetX, y: e.offsetY }];
+      }
       clearCanvas(existingShapes, canvas, ctx);
     };
 
@@ -319,6 +339,12 @@ const Mycanvas: React.FC<MycanvasProps> = ({
             };
             break;
 
+            case "pencil":
+              shape={
+              type: "pencil",
+              points: [...currentPencilPath.current]
+              }
+            break;
           // case "text":
           //   shape = {
           //     type: "text",
@@ -327,6 +353,9 @@ const Mycanvas: React.FC<MycanvasProps> = ({
           //     startY,
           //   };
           //   break;
+             case "pan":
+              console.log("pan");
+              break;
 
           default:
             console.error("Unknown type:", type);
@@ -334,6 +363,7 @@ const Mycanvas: React.FC<MycanvasProps> = ({
         }
         if (shape) {
           setExistingShapes((prevShapes) => [...prevShapes, shape]);
+          if(shape.type == "pencil") console.log(existingShapes);
           console.log("hi from mouse up");
           console.log(socket);
           console.log("Shape data:", shape);
@@ -451,6 +481,26 @@ const Mycanvas: React.FC<MycanvasProps> = ({
             ctx.fillStyle = "white";
             ctx.fillText(text as string, startX, startY);
             break;
+          case "pencil":
+            currentPencilPath.current.push({ x: e.offsetX, y: e.offsetY });
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 1; i < currentPencilPath.current.length; i++) 
+              {
+                  ctx.moveTo
+                  (
+                  currentPencilPath.current[i - 1]!.x,
+                  currentPencilPath.current[i - 1]!.y!
+                  );
+                ctx.lineTo(currentPencilPath.current[i]!.x, currentPencilPath.current[i]!.y);
+              }
+            ctx.stroke();  
+            break;
+
+          case "pan":
+            console.log("Pan action triggered");
+            break;  
           default:
             console.error("Unknown type:", type);
             break;
@@ -567,11 +617,30 @@ const Mycanvas: React.FC<MycanvasProps> = ({
           );
           ctx.stroke();
           break;
+        case "pencil":
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          for (let i = 1; i < shape.points?.length!; i++) 
+            {
+                ctx.moveTo
+                (
+                // currentPencilPath.current[i - 1]!.x,
+                shape.points![i-1]!.x,
+                // currentPencilPath.current[i - 1]!.y!,
+                shape.points![i-1]!.y
+                );
+              ctx.lineTo(shape.points![i]!.x, shape.points![i]!.y);
+            }
+          ctx.stroke();  
       }
     });
   };
 
   if (externalCanvas) return null;
+  if (!pageFound) {
+    return <PageNotFound />;
+  }
+
 
   return (
     <div>

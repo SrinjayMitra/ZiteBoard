@@ -77,14 +77,91 @@ export const signin = async (email: string, password: string): Promise<any> => {
     }
   };
 
-export const createNewRoom = async(room:string)=>{
+
+  export const getTokenAndName = async (email: string, password: string): Promise<any> => {
+    try {
+      const response = await axios.post(`${BACKEND_URL}signin`, {
+        email,
+        password,
+      });
+      
+      // Check if the response contains user data and token
+      if (response.data && response.data.token) {
+        return {
+          token: response.data.token,
+          name: response.data.user.name
+        };
+      }
+      return null;
+    } catch (err: any) {
+      console.error("Error during signin:", err);
+  
+      if (err.response) {
+        const { status } = err.response;
+        const message = err.response.data?.message || "Authentication failed.";
+  
+        switch (status) {
+          case 403:
+            return { error: "Invalid credentials", message: "Incorrect password. Please try again." };
+          case 404:
+            return { error: "User not found", message: "No user found with the provided email." };
+          default:
+            return { error: "Authentication failed", message };
+        }
+      }
+  
+      return { error: "Network error", message: "Unable to connect to the server." };
+    }
+  };
+
+  // export const getName = async (email: string, password: string): Promise<any> => {
+  //   try {
+  //     const response = await axios.post(`${BACKEND_URL}signin`, {
+  //       email,
+  //       password,
+  //     });
+      
+  //     // Check if the response contains user data and token
+  //     if (response.data && response.data.token) {
+  //       return {
+  //         name: response.data.user.name,
+  //       };
+  //     }
+  //     return null;
+  //   } catch (err: any) {
+  //     console.error("Error during signin:", err);
+  
+  //     if (err.response) {
+  //       const { status } = err.response;
+  //       const message = err.response.data?.message || "Authentication failed.";
+  
+  //       switch (status) {
+  //         case 403:
+  //           return { error: "Invalid credentials", message: "Incorrect password. Please try again." };
+  //         case 404:
+  //           return { error: "User not found", message: "No user found with the provided email." };
+  //         default:
+  //           return { error: "Authentication failed", message };
+  //       }
+  //     }
+  
+  //     return { error: "Network error", message: "Unable to connect to the server." };
+  //   }
+  // };
+
+
+
+
+export const createNewRoom = async(room:string,headers?:string)=>{
   try{
     const response = await axios.post(`${BACKEND_URL}/rooms`,
         {
           "name":room
       },{
         headers:{
-          "Authorization":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE3MDg1MjcxLTYwZDctNDgwYS05Y2YyLTExMmRkNGFmODJjMCIsImlhdCI6MTczNzIzODU4N30.gnU2_iRbxpzcXWCdoS87qR0m6K-t7wzGd2ecFEK9GmY"
+          // "Authorization":`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE3MDg1MjcxLTYwZDctNDgwYS05Y2YyLTExMmRkNGFmODJjMCIsImlhdCI6MTczNzIzODU4N30.gnU2_iRbxpzcXWCdoS87qR0m6K-t7wzGd2ecFEK9GmY`
+          // "Authorization":`${headers}`
+           Authorization:`${localStorage.getItem('token')}`
         }
       })
       return  response.data.message;
@@ -95,19 +172,20 @@ export const createNewRoom = async(room:string)=>{
 
 }
 
-export const getAllRooms = async()=>{
-  try{
-    const response = await axios.get(`${BACKEND_URL}/allRooms`,
-       {
-        headers:{
-          "Authorization":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE3MDg1MjcxLTYwZDctNDgwYS05Y2YyLTExMmRkNGFmODJjMCIsImlhdCI6MTczODA1NjgyNH0.xWyQuAJZ3_CUUnbZfyqo5cFgWPrJay3-2nTRh0ioKq8"
-        }
-      })
-     const result = response.data;
-     console.log(result);
+export const getAllRooms = async (headers?:string) => {
+  try {
+    const response = await axios.get(`${BACKEND_URL}/allRooms`, {
+      headers: {
+        // Authorization:
+        //   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE3MDg1MjcxLTYwZDctNDgwYS05Y2YyLTExMmRkNGFmODJjMCIsImlhdCI6MTczODA1NjgyNH0.xWyQuAJZ3_CUUnbZfyqo5cFgWPrJay3-2nTRh0ioKq8",
+            // Authorization:`${headers}`
+            Authorization:`${localStorage.getItem('token')}`
+      },
+    });
 
-  }catch(e){
-    console.error(e);
+    return response.data; // Return the raw data
+  } catch (error) {
+    console.error("Error fetching rooms:", error);
+    throw error;
   }
-
-}
+};

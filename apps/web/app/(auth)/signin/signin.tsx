@@ -4,13 +4,12 @@ import React, { useState } from "react";
 import { cn } from "@repo/ui/lib";
 import { Label } from "@repo/ui/ui";
 import { motion } from "framer-motion";
-import {  signIn } from "next-auth/react"; // Importing next-auth's signIn method
+import { getSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { IconAlertTriangle, IconBrandGithub, IconBrandGoogle } from "@tabler/icons-react"; // Add icons
-import { signin } from "../../(lib)/utils";
+import { IconAlertTriangle, IconBrandGithub, IconBrandGoogle } from "@tabler/icons-react"; 
+import { getTokenAndName, signin } from "../../(lib)/utils";
 import axios from "axios";
-import Credentials from "next-auth/providers/credentials";
-const {BACKEND_URL} = require("@repo/backend-common/config");
+const { BACKEND_URL } = require("@repo/backend-common/config");
 
 // Custom Input with animated border effect
 const CustomInput = ({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) => {
@@ -47,6 +46,7 @@ const Signin: React.FC = () => {
   });
 
   const [responseMessage, setResponseMessage] = useState<string>(''); // State to store response message
+  const [isLoading, setIsLoading] = useState<boolean>(false); // State for loading indicator
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -61,6 +61,8 @@ const Signin: React.FC = () => {
     e.preventDefault();
     const { email, password } = formData;
 
+    setIsLoading(true); // Set loading state to true when submit is clicked
+
     try {
       console.log("hi from signin");
       const response = await signIn("credentials", {
@@ -68,56 +70,40 @@ const Signin: React.FC = () => {
         email,
         password,
       });
-      // const response = await axios.post(`${BACKEND_URL}signin`,{
-      //   email: email,
-      //   password: password
-      // })
-      // Return structured data: user info and token
       console.log(`${response} from signin.tsx`);
+      
       if (response?.ok && response.status == 200) {
         setResponseMessage("SignIn successful");
-  
-        // Redirect or update the UI accordingly after successful login
-        // For example:
-        router.push('/dashboard');  // Adjust this as per your app's flow
-      } 
-      else if (response?.error) {
-        let status = response.status
-        if (response.status === 401) {
+
+        const res = await getTokenAndName(email,password);
+
+        // console.log(res.token);
+        // const auth = JSON.stringify(res.token);
+        // console.log( auth);
+
+        localStorage.setItem("token", res.token);
+        localStorage.setItem("name", res.name);
+
+
+        router.push('/dashboard'); 
+
+      } else if (response?.error) {
+        let status = response.status;
+        if (status === 401) {
           setResponseMessage("Incorrect email or password. Please try again.");
         } else if (status === 404) {
           setResponseMessage("User not found. Please try again.");
-       } 
-      //  else {
-        //   setResponseMessage(response.error);  // Display server-provided message
-        // }
+        }
       } else {
-        // This block handles network or other types of errors without response
         setResponseMessage("Network error. Please try again.");
       }
-
     } catch (error: any) {
-      console.error("Error during signin:", error);  // Log the error object
-    
-      // Check if error has a response property (i.e., server-side error response)
-      // if (error?.response) {
-      //   const { status } = error.response;
-      //   const message = error.response.data?.message || "Authentication failed.";
-    
-      //   if (status === 403) {
-      //     setResponseMessage("Incorrect email or password. Please try again.");
-      //   } else if (status === 404) {
-      //     setResponseMessage("User not found. Please try again.");
-      //   } else {
-      //     setResponseMessage(message);  // Display server-provided message
-      //   }
-      // } else {
-      //   // This block handles network or other types of errors without response
-      //   setResponseMessage("Network error. Please try again.");
-      // }
+      console.error("Error during signin:", error);
+      setResponseMessage("An error occurred. Please try again later.");
+    } finally {
+      setIsLoading(false); // Set loading state to false once the process is complete
     }
   };
-  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black">
@@ -135,12 +121,11 @@ const Signin: React.FC = () => {
         </motion.div>
 
         {responseMessage && (
-            // <p className="text-center text-white mt-4">{responseMessage}</p> 
-            <div className="bg-red-200 p-3 rounded-md flex items-center gap-x-2 text-sm text-red-600" >
-              <IconAlertTriangle/>
-              <p>{responseMessage}</p>
-            </div>
-          )}
+          <div className="bg-red-200 p-3 rounded-md flex items-center gap-x-2 text-sm text-red-600">
+            <IconAlertTriangle />
+            <p>{responseMessage}</p>
+          </div>
+        )}
 
         <form className="my-8" onSubmit={handleSubmit}>
           <LabelInputContainer className="mb-4">
@@ -165,10 +150,15 @@ const Signin: React.FC = () => {
           </LabelInputContainer>
 
           <button
-            className="relative group/btn bg-gradient-to-br from-cyan-500 to-indigo-500 text-white rounded-md h-12 font-medium shadow-lg w-full transform transition-all duration-300 ease-in-out hover:scale-105"
+            className={`relative group/btn bg-gradient-to-br from-cyan-500 to-indigo-500 text-white rounded-md h-12 font-medium shadow-lg w-full transform transition-all duration-300 ease-in-out hover:scale-105 ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
             type="submit"
+            disabled={isLoading} // Disable button during loading
           >
-            Sign in &rarr;
+            {isLoading ? (
+              <span>Loading...</span> // You can also replace this with a spinner
+            ) : (
+              'Sign in '
+            )}
             <BottomGradient />
           </button>
 
@@ -189,10 +179,9 @@ const Signin: React.FC = () => {
               className="relative group/btn flex space-x-2 items-center justify-start px-4 w-full text-white rounded-md h-10 font-medium shadow-lg bg-gray-800 hover:bg-gray-700 transition-all duration-300 ease-in-out"
               type="button"
               onClick={async () => {
-                  await signIn("google");
-                  router.push("/dashboard"); // Redirect after sign-in
-                }
-              }
+                await signIn("google");
+                router.push("/dashboard"); // Redirect after sign-in
+              }}
             >
               <IconBrandGoogle className="h-4 w-4 text-white" />
               <span className="text-white text-sm">Sign in with Google</span>

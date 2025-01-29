@@ -4,14 +4,14 @@ import { cn } from "@repo/ui/lib";
 import { Label } from "@repo/ui/ui";
 import { motion } from "framer-motion";
 import { signup } from "../../(lib)/utils";
-import Router  from "next/navigation";
+import { useRouter } from 'next/navigation';
 import { IconBrandGithub, IconBrandGoogle, IconBrandOnlyfans } from "@tabler/icons-react";
 
 // Custom Input with animated border effect
 const CustomInput = ({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) => {
   return (
     //@ts-ignore
-    <motion.input 
+    <motion.input
       {...props}
       className={cn(
         "bg-gray-800 text-white rounded-md h-10 p-3 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 ease-in-out",
@@ -44,40 +44,42 @@ const Signup: React.FC = () => {
     confirmPassword: '',
   });
 
-  const [responseMessage, setResponseMessage] = useState<string>(''); // State to store response message
+  const [responseMessage, setResponseMessage] = useState<string>('');
+  const [passwordMatchError, setPasswordMatchError] = useState<string>('');
+  const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.id]: e.target.value,
     });
+    if (e.target.id === 'password' || e.target.id === 'confirmPassword') {
+      setPasswordMatchError('');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const { email, password, firstname, lastname } = formData;
     if (password !== formData.confirmPassword) {
-      alert('Passwords do not match!');
+      setPasswordMatchError('Passwords do not match!');
       return;
     }
+
     try {
       const response = await signup(email, password, `${firstname} ${lastname}`);
-  
-      // Log the response status (for debugging)
-      console.log("hi");
-      console.log(response);
-  
       if (response) {
         if (response.message === "user created successfully") {
           setResponseMessage('SignUp successful!');
-        } else if(response.message === "User already exists. Please try with a different email."){
+          router.push("/signin");
+        } else if (response.message === "User already exists. Please try with a different email.") {
           setResponseMessage('User already exists. Please try with a different email. You can sign in instead: [Sign in](/signin)');
-        }else{
-        setResponseMessage(response.message);
+        } else {
+          setResponseMessage(response.message);
         }
       }
     } catch (error: any) {
-     console.error(error);
+      console.error(error);
     }
   };
 
@@ -100,53 +102,53 @@ const Signup: React.FC = () => {
           <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 mb-4">
             <LabelInputContainer>
               <Label htmlFor="firstname" className="text-white">First name</Label>
-              <CustomInput 
-                id="firstname" 
-                placeholder="John" 
-                type="text" 
-                value={formData.firstname} 
-                onChange={handleChange} 
+              <CustomInput
+                id="firstname"
+                placeholder="John"
+                type="text"
+                value={formData.firstname}
+                onChange={handleChange}
               />
             </LabelInputContainer>
             <LabelInputContainer>
               <Label htmlFor="lastname" className="text-white">Last name</Label>
-              <CustomInput 
-                id="lastname" 
-                placeholder="Doe" 
-                type="text" 
-                value={formData.lastname} 
-                onChange={handleChange} 
+              <CustomInput
+                id="lastname"
+                placeholder="Doe"
+                type="text"
+                value={formData.lastname}
+                onChange={handleChange}
               />
             </LabelInputContainer>
           </div>
           <LabelInputContainer className="mb-4">
             <Label htmlFor="email" className="text-white">Email Address</Label>
-            <CustomInput 
-              id="email" 
-              placeholder="johndoe@example.com" 
-              type="email" 
-              value={formData.email} 
-              onChange={handleChange} 
+            <CustomInput
+              id="email"
+              placeholder="johndoe@example.com"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
             />
           </LabelInputContainer>
           <LabelInputContainer className="mb-4">
             <Label htmlFor="password" className="text-white">Password</Label>
-            <CustomInput 
-              id="password" 
-              placeholder="••••••••" 
-              type="password" 
-              value={formData.password} 
-              onChange={handleChange} 
+            <CustomInput
+              id="password"
+              placeholder="••••••••"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
             />
           </LabelInputContainer>
           <LabelInputContainer className="mb-8">
             <Label htmlFor="confirmPassword" className="text-white">Confirm Password</Label>
-            <CustomInput 
-              id="confirmPassword" 
-              placeholder="••••••••" 
-              type="password" 
-              value={formData.confirmPassword} 
-              onChange={handleChange} 
+            <CustomInput
+              id="confirmPassword"
+              placeholder="••••••••"
+              type="password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
             />
           </LabelInputContainer>
 
@@ -159,8 +161,12 @@ const Signup: React.FC = () => {
           </button>
 
           {responseMessage && (
-          <p className="text-center text-white mt-4">{responseMessage}</p> // Display the response message here
-        )}
+            <p className="text-center text-white mt-4">{responseMessage}</p>
+          )}
+
+          {passwordMatchError && (
+            <p className="text-center text-red-500 mt-4">{passwordMatchError}</p>
+          )}
 
           <div className="bg-gradient-to-r from-transparent via-neutral-700 to-transparent my-8 h-[1px] w-full" />
 
@@ -181,18 +187,16 @@ const Signup: React.FC = () => {
               <span className="text-white text-sm">Sign up with Google</span>
               <BottomGradient />
             </button>
-            {/* <button
+            <button
               className="relative group/btn flex space-x-2 items-center justify-start px-4 w-full text-white rounded-md h-10 font-medium shadow-lg bg-gray-800 hover:bg-gray-700 transition-all duration-300 ease-in-out"
               type="button"
             >
               <IconBrandOnlyfans className="h-4 w-4 text-white" />
               <span className="text-white text-sm">Sign up with OnlyFans</span>
               <BottomGradient />
-            </button> */}
+            </button>
           </div>
         </form>
-
-        
       </div>
     </div>
   );

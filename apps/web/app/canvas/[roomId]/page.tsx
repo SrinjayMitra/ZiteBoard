@@ -17,7 +17,7 @@ const Dashboard: React.FC<DashboardProps> =  async ({ params }) => {
     <div>
       {/* <Mycanvas type="rect" text="hello" roomId={roomId}/> */}
       {/* <Mycanvas type="rect" text="hello" roomId={roomId}/> */}
-      <RoomCanvas type="round-rect" roomId={roomId}/>
+      <RoomCanvas  roomId={roomId}/>
     </div>
   );
 }
