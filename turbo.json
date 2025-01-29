@@ -1,21 +1,37 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "ui": "tui",
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**"]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
+    "dev": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "persistent": true
+    },
+    "prod": {
+      "dependsOn": [
+        "build", 
+        "apps/http-backend:build", 
+        "apps/ws-backend:build", 
+        "apps/web:build",
+        "^start"
+      ],
+      "cache": false
+    },
+    "start": {
+      "dependsOn": [
+        "apps/http-backend:dev",
+        "apps/ws-backend:dev",
+        "apps/web:dev"
+      ]
     },
     "lint": {
       "dependsOn": ["^lint"]
     },
     "check-types": {
       "dependsOn": ["^check-types"]
-    },
-    "dev": {
-      "cache": false,
-      "persistent": true
     }
   }
 }
